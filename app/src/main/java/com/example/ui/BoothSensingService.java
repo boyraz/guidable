@@ -31,10 +31,9 @@ public class BoothSensingService extends Service implements RECORangingListener,
     private ArrayList<RECOBeaconRegion> mRegions;
     private BoothSensingHistory.UserVisit mVisit;
     private BoothSensingHistory.UserHistory mHistory;
-    private ArrayList<BoothSensingHistory.Location> mLocations;
     private BoothDB boothDB;
     private ArrayList<RECOBeacon> mRangedBeacons;
-    private BoothSensingHistory.Location userLocation;
+    public static BoothSensingHistory.Location userLocation;
     private ArrayList<BoothSensingHistory.Stabilizer> mStabs;
     private ArrayList<BoothSensingHistory.Stabilizer> mStabsForLoc;
     private int global_count;
@@ -507,17 +506,14 @@ public class BoothSensingService extends Service implements RECORangingListener,
         userLocation.name = "Myself";
 
         if(mVisit != null){
-            for(int i = 0; i < mLocations.size(); i++){
-                if(mLocations.get(i).minor == mVisit.minor){
-                    userLocation.x = mLocations.get(i).x;
-                    userLocation.y = mLocations.get(i).y;
-                }
-            }
+            Cursor c = boothDB.getBeacon((long)mVisit.minor);
+            userLocation.x = c.getLong(c.getColumnIndex(DBTables.beacon.LocationX));
+            userLocation.y = c.getLong(c.getColumnIndex(DBTables.beacon.LocationY));
+            c.close();
         }
         //If there is no monitored beacons nearby, the app cannot detect user location. Thus, let it default value(0,0).
         else if(mStabsForLoc.size() == 0){
-            userLocation.x = 0;
-            userLocation.y = 0;
+            userLocation = null;
         }
         //If there is only one monitored beacons nearby, the app assumes that user is in the booth where the beacon exists.
         else if(mStabsForLoc.size() == 1){
@@ -569,6 +565,7 @@ public class BoothSensingService extends Service implements RECORangingListener,
             userLocation.x = (x1+x2)/2;
             userLocation.y = (y1+y2)/2;
         }
+        Log.i("BoothSensingService", userLocation.x+" "+ userLocation.y);
     }
 
     @Override

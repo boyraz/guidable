@@ -62,8 +62,8 @@ public class BoothDB {
 				ContentValues values = new ContentValues();
 				values.put(DBTables.beacon.MINOR, BoothInfo.minor[i]);
 				values.put(DBTables.beacon.BID, (long)i);
-				values.put(DBTables.beacon.LocationX, BoothInfo.x[i]);
-				values.put(DBTables.beacon.LocationY, BoothInfo.y[i]);
+				values.put(DBTables.beacon.LocationX, BoothInfo.x[i]+55);
+				values.put(DBTables.beacon.LocationY, BoothInfo.y[i]+55);
 				values.put(DBTables.beacon.RANGE, BoothInfo.range[i]);
 				db.insert(DBTables.beacon._TABLENAME, null, values);
 			}

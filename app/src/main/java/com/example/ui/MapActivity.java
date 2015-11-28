@@ -77,7 +77,7 @@ public class MapActivity extends Activity {
 	private PhotoViewAttacher mAttacher; //variable for PhotoViewAttacher which manage the pinch-zoom and drag functions for map
 	private IconView mIconView; //variable for draw Icons on the map
 	private RectF map_size; //save initial map size (this is used for implementing pinch-zoom and drag function for Icons
-	
+	private boolean showRecent = false;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -118,6 +118,7 @@ public class MapActivity extends Activity {
 				if(isMonitoring()) {
 					stopService(intent);
 					Toast.makeText(MapActivity.this,"stop service",Toast.LENGTH_LONG).show();
+                    mIconView.showRecent = false;
 				}
 				else {
 					startService(intent);
@@ -252,7 +253,14 @@ public class MapActivity extends Activity {
 	    getPositButton.setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View v){
-				mAttacher.setScale((float)1.0);
+                if(BoothSensingService.userLocation == null) mIconView.showRecent = false;
+                else{
+                    mIconView.recentX = (float)BoothSensingService.userLocation.x;
+                    mIconView.recentY = (float)BoothSensingService.userLocation.y;
+                    mIconView.showRecent = true;
+
+                }
+                Log.i("current button",mIconView.showRecent+" ");
 			}
 		});
 
@@ -313,6 +321,10 @@ class IconView extends View{
 	Paint mPaint;
 	Matrix matrix; //matrix of map
 	Cursor booths; //cursor for booth info
+	boolean showRecent;
+    float recentX;
+    float recentY;
+
 	public IconView(Context context){
 		super(context);
 		mPaint = new Paint();
@@ -334,6 +346,7 @@ class IconView extends View{
 	public Cursor getCursor(){
 		return this.booths;
 	}
+
 	@Override
 	public void onDraw(Canvas canvas){
 		canvas.concat(matrix);
@@ -347,6 +360,13 @@ class IconView extends View{
 		while(booths.moveToNext()){
 			long x = booths.getLong(booths.getColumnIndex(DBTables.booth.LocationX));
 			long y = booths.getLong(booths.getColumnIndex(DBTables.booth.LocationY));
+			if(showRecent){
+				mPaint.setColor(Color.RED);
+                Log.i("current Position",recentX+" "+recentY);
+				canvas.drawCircle(recentX, recentY, 22, mPaint);
+				mPaint.setColor(Color.BLACK);
+				canvas.drawCircle(recentX, recentY, 20 ,mPaint);
+			}
 			if(booths.getLong(booths.getColumnIndex(DBTables.booth.RECOMMENDATION)) != 0){
 				mPaint.setColor(0xFFFFD541);
 				canvas.drawCircle(x + 20, y + 20, 10, mPaint);
