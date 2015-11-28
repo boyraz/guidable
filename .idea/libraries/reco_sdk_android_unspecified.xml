@@ -1,8 +1,8 @@
 <component name="libraryTable">
   <library name="reco-sdk-android-unspecified">
     <CLASSES>
-      <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/UI2/reco-sdk-android/unspecified/res" />
-      <root url="jar://$PROJECT_DIR$/app/build/intermediates/exploded-aar/UI2/reco-sdk-android/unspecified/jars/classes.jar!/" />
+      <root url="jar://$PROJECT_DIR$/app/build/intermediates/exploded-aar/guidable/reco-sdk-android/unspecified/jars/classes.jar!/" />
+      <root url="file://$PROJECT_DIR$/app/build/intermediates/exploded-aar/guidable/reco-sdk-android/unspecified/res" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
