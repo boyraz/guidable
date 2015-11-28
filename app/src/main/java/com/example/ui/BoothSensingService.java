@@ -36,6 +36,7 @@ public class BoothSensingService extends Service implements RECORangingListener,
     private ArrayList<RECOBeacon> mRangedBeacons;
     private BoothSensingHistory.Location userLocation;
     private ArrayList<BoothSensingHistory.Stabilizer> mStabs;
+    private ArrayList<BoothSensingHistory.Stabilizer> mStabsForLoc;
     private int global_count;
 
 
@@ -110,6 +111,7 @@ public class BoothSensingService extends Service implements RECORangingListener,
         mVisit = null;
         mHistory = new BoothSensingHistory.UserHistory();
         mStabs = new ArrayList<BoothSensingHistory.Stabilizer>();
+        mStabsForLoc = new ArrayList<BoothSensingHistory.Stabilizer>();
         mRangedBeacons = new ArrayList<RECOBeacon>();
         mRecoManager.setMonitoringListener(this);
         mRecoManager.setRangingListener(this);
@@ -290,16 +292,17 @@ public class BoothSensingService extends Service implements RECORangingListener,
 
             rangeFilter();
 
-            //Approximate user location with nearby monitored beacon locations and distance from them.
-            findUser();
-
             //Update where the user visits right now and if user left from a booth, save recent visit history into somewhere.
             updateHistory();
+
+            //Approximate user location with nearby monitored beacon locations and distance from them.
+            findUser();
 
             boothDB.close();
 
             global_count = 0;
             mStabs = new ArrayList<BoothSensingHistory.Stabilizer>();
+            mStabsForLoc = new ArrayList<BoothSensingHistory.Stabilizer>();
         }
 
         else{
@@ -318,6 +321,10 @@ public class BoothSensingService extends Service implements RECORangingListener,
                     mStabs.get(j).rssi += mRangedBeacons.get(i).getRssi();
                     mStabs.get(j).distance += mRangedBeacons.get(i).getAccuracy();
                     mStabs.get(j).count += 1;
+                    mStabsForLoc.get(j).txpower += mRangedBeacons.get(i).getTxPower();
+                    mStabsForLoc.get(j).rssi += mRangedBeacons.get(i).getRssi();
+                    mStabsForLoc.get(j).distance += mRangedBeacons.get(i).getAccuracy();
+                    mStabsForLoc.get(j).count += 1;
                     found = true;
                     break;
                 }
@@ -330,6 +337,7 @@ public class BoothSensingService extends Service implements RECORangingListener,
                 Stab.rssi = mRangedBeacons.get(i).getRssi();
                 Stab.count = 1;
                 mStabs.add(Stab);
+                mStabsForLoc.add(Stab);
             }
             found = false;
         }
@@ -391,11 +399,15 @@ public class BoothSensingService extends Service implements RECORangingListener,
         for(int i = 0; i < mStabs.size(); ){
             if(mStabs.get(i).count <= 5){
                 mStabs.remove(i);
+                mStabsForLoc.remove(i);
             }
             else{
                 mStabs.get(i).txpower = mStabs.get(i).txpower / mStabs.get(i).count;
                 mStabs.get(i).rssi = mStabs.get(i).rssi / mStabs.get(i).count;
                 mStabs.get(i).distance = calculateAccuracy(mStabs.get(i).txpower, mStabs.get(i).rssi);
+                mStabsForLoc.get(i).txpower = mStabs.get(i).txpower;
+                mStabsForLoc.get(i).rssi = mStabs.get(i).rssi;
+                mStabsForLoc.get(i).distance = mStabs.get(i).distance;
                 i++;
             }
         }
@@ -458,7 +470,7 @@ public class BoothSensingService extends Service implements RECORangingListener,
             /* If nearest booth detected is the booth user visited recently, the app just update the distance between user and current visiting booth
              */
             else if(mVisit.minor == mStabs.get(nearest).minor){
-                    mVisit.distance = distance;
+                mVisit.distance = distance;
                 Log.i("Visit info", mVisit.minor+"   "+mVisit.distance);
             }
             // If the nearest booth is different from recently visited booth, update history. As new visiting booth exists, send that information to server
@@ -495,19 +507,21 @@ public class BoothSensingService extends Service implements RECORangingListener,
         userLocation.name = "Myself";
 
         if(mVisit != null){
-            Cursor c = boothDB.getBeacon((long)mVisit.minor);
-            userLocation.x = c.getLong(c.getColumnIndex(DBTables.beacon.LocationX));
-            userLocation.y = c.getLong(c.getColumnIndex(DBTables.beacon.LocationY));
-            c.close();
+            for(int i = 0; i < mLocations.size(); i++){
+                if(mLocations.get(i).minor == mVisit.minor){
+                    userLocation.x = mLocations.get(i).x;
+                    userLocation.y = mLocations.get(i).y;
+                }
+            }
         }
         //If there is no monitored beacons nearby, the app cannot detect user location. Thus, let it default value(0,0).
-        else if(mRangedBeacons.size() == 0){
+        else if(mStabsForLoc.size() == 0){
             userLocation.x = 0;
             userLocation.y = 0;
         }
         //If there is only one monitored beacons nearby, the app assumes that user is in the booth where the beacon exists.
-        else if(mRangedBeacons.size() == 1){
-            Cursor c = boothDB.getBeacon((long)mStabs.get(0).minor);
+        else if(mStabsForLoc.size() == 1){
+            Cursor c = boothDB.getBeacon((long)mStabsForLoc.get(0).minor);
             userLocation.x = c.getLong(c.getColumnIndex(DBTables.beacon.LocationX));
             userLocation.y = c.getLong(c.getColumnIndex(DBTables.beacon.LocationY));
             c.close();
@@ -527,17 +541,17 @@ public class BoothSensingService extends Service implements RECORangingListener,
         else{
             x1 = x2 = y1 = y2 = 0;
             // Find two beacons monitored and save its id value and accuracy
-            m1 = mStabs.get(0).minor;
-            d1 = mStabs.get(0).distance;
-            m2 = mStabs.get(1).minor;
-            d2 = mStabs.get(1).distance;
+            m1 = mStabsForLoc.get(0).minor;
+            d1 = mStabsForLoc.get(0).distance;
+            m2 = mStabsForLoc.get(1).minor;
+            d2 = mStabsForLoc.get(1).distance;
             // Find location of beacons
-            Cursor c1 = boothDB.getBeacon((long)mStabs.get(0).minor);
+            Cursor c1 = boothDB.getBeacon((long)mStabsForLoc.get(0).minor);
             userLocation.x = c1.getLong(c1.getColumnIndex(DBTables.beacon.LocationX));
             userLocation.y = c1.getLong(c1.getColumnIndex(DBTables.beacon.LocationY));
             c1.close();
 
-            Cursor c2 = boothDB.getBeacon((long)mStabs.get(1).minor);
+            Cursor c2 = boothDB.getBeacon((long)mStabsForLoc.get(1).minor);
             userLocation.x = c2.getLong(c2.getColumnIndex(DBTables.beacon.LocationX));
             userLocation.y = c2.getLong(c2.getColumnIndex(DBTables.beacon.LocationY));
             c2.close();
