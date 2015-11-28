@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal" >
+    <ImageView
+        android:id="@+id/icon_booth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_launcher"
+        android:layout_alignParentLeft="true"/>
+    <TextView
+        android:id="@+id/name_booth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="name"
+        android:textSize="20sp"
+        android:layout_toRightOf="@+id/icon_booth"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentRight="true">
+        <ImageView
+            android:id="@+id/recommend_booth"
+        	android:layout_width="40dp"
+        	android:layout_height="40dp"
+        	android:src="@drawable/recommend"
+        	android:layout_alignParentRight="true" />
+        <ImageView
+            android:id="@+id/popular_booth"
+        	android:layout_width="40dp"
+        	android:layout_height="40dp"
+        	android:src="@drawable/popular"
+        	android:layout_alignParentRight="true" />
+        <ImageView
+            android:id="@+id/visit_booth"
+        	android:layout_width="40dp"
+        	android:layout_height="40dp"
+        	android:src="@drawable/visit"
+        	android:layout_alignParentRight="true" />
+         <ImageView
+            android:id="@+id/event_booth"
+        	android:layout_width="40dp"
+        	android:layout_height="40dp"
+        	android:src="@drawable/event"
+        	android:layout_alignParentRight="true" />
+    </LinearLayout>
+
+
+
+</RelativeLayout>
