@@ -5,6 +5,8 @@ import java.util.ArrayList;
 /**
  * Created by lim on 2015-11-28.
  */
+ // TODO is there a reason why all mathods are static? 
+ // you still won't be able to use the methods with out calling the constructor first
 public class ServerAdapter {
     private GableClient c;
     private int uid;
